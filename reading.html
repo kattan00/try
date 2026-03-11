@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مُصحح القراءة الذكي</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            text-align: center; 
+            background-color: #f7f9fc; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+            width: 95%; /* عشان ياخد مساحة الشاشة */
+            max-width: 600px; 
+        }
+        h1 { font-size: 28px; color: #2c3e50; margin-bottom: 10px; }
+        p { font-size: 18px; color: #7f8c8d; }
+        
+        .sentence { 
+            font-size: 40px; /* خط الجملة بقى ضخم */
+            margin: 30px 0; 
+            color: #2c3e50; 
+            line-height: 1.5;
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #f1c40f;
+        }
+        
+        button { 
+            background-color: #27ae60; 
+            color: white; 
+            border: none; 
+            padding: 20px 40px; 
+            font-size: 24px; /* زرار كبير للضغط بسهولة */
+            border-radius: 50px; 
+            cursor: pointer; 
+            width: 100%;
+            box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3); 
+        }
+        
+        #result { 
+            margin-top: 30px; 
+            text-align: center; 
+            direction: rtl; 
+            padding: 20px; 
+            background: #ffffff; 
+            border-radius: 15px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+        }
+        
+        .word-correct { color: #27ae60; font-weight: bold; font-size: 35px; margin: 0 5px; }
+        .word-wrong { color: #e74c3c; font-weight: bold; text-decoration: underline; font-size: 35px; margin: 0 5px; }
+        
+        .score-box {
+            font-size: 26px; 
+            margin-top: 20px; 
+            padding: 10px;
+            background: #fdf2f2;
+            border-radius: 10px;
+            color: #c0392b;
+            font-weight: bold;
+        }
+        .transcript-text { font-size: 20px; color: #34495e; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>مُصحح القراءة الذكي 🎙️</h1>
+    <p>اقرأ الجملة التالية بصوت مرتفع:</p>
+    
+    <div class="sentence" id="target-text">أنا أحب مدرستي الجميلة</div>
+    
+    <button onclick="startListening()">🎤 اضغط وابدأ الكلام</button>
+
+    <div id="result">
+        <p>النتيجة ستظهر هنا بالتفصيل...</p>
+    </div>
+</div>
+
+<script>
+    function startListening() {
+        const resultDiv = document.getElementById('result');
+        const targetText = document.getElementById('target-text').innerText;
+        const targetWords = targetText.trim().split(/\s+/);
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            resultDiv.innerHTML = "<h2 style='color:red;'>المتصفح لا يدعم الصوت</h2>";
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-SA';
+
+        resultDiv.innerHTML = "<h2 style='color:orange;'>⏳ جاري الاستماع...</h2>";
+        recognition.start();
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript.trim();
+            const studentWords = transcript.split(/\s+/);
+            
+            let feedbackHTML = "<div style='margin-bottom:15px;'>";
+            let errorCount = 0;
+
+            targetWords.forEach((word, index) => {
+                let studentWord = studentWords[index] || "";
+                let cleanTarget = word.replace(/[^\u0621-\u064A]/g, "");
+                let cleanStudent = studentWord.replace(/[^\u0621-\u064A]/g, "");
+
+                if (cleanTarget === cleanStudent) {
+                    feedbackHTML += `<span class="word-correct">${word}</span> `;
+                } else {
+                    feedbackHTML += `<span class="word-wrong">${word}</span> `;
+                    errorCount++;
+                }
+            });
+            feedbackHTML += "</div>";
+            
+            let report = `<div class="score-box">عدد الأخطاء: ${errorCount}</div>`;
+            report += `<p class="transcript-text">سمعتك تقول: "${transcript}"</p>`;
+            
+            if(errorCount === 0) report += "<h2 style='color:green;'>🌟 ممتاز! قراءة صحيحة</h2>";
+            
+            resultDiv.innerHTML = feedbackHTML + report;
+        };
+
+        recognition.onerror = function(event) {
+            resultDiv.innerHTML = "<h2 style='color:red;'>خطأ: " + event.error + "</h2>";
+        };
+    }
+</script>
+
+</body>
+</html>
